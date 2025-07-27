@@ -30,8 +30,46 @@ int command_pwd()
     return 0;
 }
 
-int command_cd(char** args, char* initial_directory);
-int command_pwd();
-int command_echo(char** args, char** env);
-int command_env(char** env);
+int command_echo(char** args, char** env) {
+    int new_line = 1;
+    int i = 1;
+
+    if (args[1] != NULL && my_strcmp(args[1], "-n") == 0) {
+        new_line = 0;
+        i++;
+    }
+
+    for (; args[i]; i++) {
+        if (args[i][0] == '$') {
+            char* value = my_getenv(args[i] + 1, env);
+            if (value) {
+                printf("%s", value);
+            }
+        } else {
+            printf("%s", args[i]);
+        }
+
+        if (args[i + 1] != NULL) {
+            printf(" ");
+        }
+    }
+
+    if (new_line) {
+        printf("\n");
+    }
+
+    return 0;
+}
+
+
+int command_env(char** env) {
+    size_t index = 0;
+    while (env[index])
+    {
+        printf("%s\n", env[index]);
+        index++;
+    }
+    return 0;
+}
+
 int command_which(char** args, char** env);

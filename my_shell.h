@@ -4,7 +4,6 @@
 #include <stddef.h>
 
 #define MAX_INPUT 1024
-#define MAX_PATH 256
 
 char** parse_input(char* input);
 
@@ -24,3 +23,4 @@ char** command_unsetenv(char** args, char** env);
 
 // Helpers
 int my_strcmp (const char* str1, const char* str2);
+char* my_getenv(const char *name, char** env);
