@@ -3,7 +3,8 @@
 #include <unistd.h>
 #include <stddef.h>
 
-#define MAX_INPUT 1024;
+#define MAX_INPUT 1024
+#define MAX_PATH 256
 
 char** parse_input(char* input);
 

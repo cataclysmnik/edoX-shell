@@ -16,11 +16,11 @@ int shell_builts(char** args,char** env, char* initial_directory)
     (void) initial_directory;
     if (my_strcmp(args[0], "cd") == 0)
     {
-        // command_cd(args, initial_directory);
+        command_cd(args, initial_directory);
     }
     else if (my_strcmp(args[0], "pwd") == 0)
     {
-        // command_pwd();
+        command_pwd();
     }
     else if (my_strcmp(args[0], "echo") == 0)
     {
@@ -39,7 +39,7 @@ int shell_builts(char** args,char** env, char* initial_directory)
         exit(EXIT_SUCCESS);
     }
     else {
-
+        // executor();
     }
     return 0;
 }
