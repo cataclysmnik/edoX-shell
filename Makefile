@@ -1,11 +1,18 @@
-TARGET = my_shell
-OBJ = main.c input_parser.c helpers.c builtins.c
+TARGET = edosh
+SRC_DIR = src
+OBJ = $(SRC_DIR)/main.c $(SRC_DIR)/input_parser.c $(SRC_DIR)/helpers.c $(SRC_DIR)/builtins.c $(SRC_DIR)/executor.c
+CFLAGS = -Wall -Wextra -Werror
 CC = gcc
 
-all:
-	$(CC) -o $(TARGET) $(OBJ)
+all: $(TARGET)
+
+$(TARGET): $(OBJ)
+	$(CC) $(CFLAGS) -o $(TARGET) $(OBJ)
+
 clean:
-	re -f *-o
-fclean: clear
+	rm -f $(SRC_DIR)/*.o
+
+fclean: clean
 	rm -f $(TARGET)
+
 re: fclean all

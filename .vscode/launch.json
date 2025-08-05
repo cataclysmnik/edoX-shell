@@ -8,8 +8,8 @@
       "args": [],
       "stopAtEntry": false,
       "externalConsole": false,
-      "cwd": "/home/cataclysmnik/Repos/edoX-shell",
-      "program": "/home/cataclysmnik/Repos/edoX-shell/build/Debug/outDebug",
+      "cwd": "/home/cataclysmnik/Repos/edoX-shell/src",
+      "program": "/home/cataclysmnik/Repos/edoX-shell/src/build/Debug/outDebug",
       "MIMode": "gdb",
       "miDebuggerPath": "gdb",
       "setupCommands": [
