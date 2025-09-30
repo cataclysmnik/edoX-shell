@@ -3,6 +3,8 @@
 #include <signal.h>
 #include <errno.h>
 #include <unistd.h>
+#include <termios.h>
+#include <string.h>
 
 // Shell loop
 // Input Parsing
@@ -106,10 +108,46 @@ void sigint_handler(int signo)
     write(STDOUT_FILENO, "\n", 1);
 }
 
+/* raw mode helpers for single-char input */
+static struct termios orig_termios;
+static int raw_enabled = 0;
+
+static void disable_raw_mode(void) {
+    if (raw_enabled) {
+        tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios);
+        raw_enabled = 0;
+    }
+}
+
+static int enable_raw_mode(void) {
+    if (tcgetattr(STDIN_FILENO, &orig_termios) == -1) return -1;
+    atexit(disable_raw_mode);
+    struct termios raw = orig_termios;
+    raw.c_lflag &= ~(ECHO | ICANON); // no echo, non-canonical
+    raw.c_iflag &= ~(IXON); // disable Ctrl-S/Ctrl-Q flow control
+    raw.c_cc[VMIN] = 1;
+    raw.c_cc[VTIME] = 0;
+    if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw) == -1) return -1;
+    raw_enabled = 1;
+    return 0;
+}
+
+/* print prompt (cwd) */
+static void print_prompt(void) {
+    char* cwd = getcwd(NULL, 0);
+    if (cwd) {
+        printf("%s > ", cwd);
+        free(cwd);
+    } else {
+        printf("[unknown]> ");
+    }
+    fflush(stdout);
+}
+
 void shell_loop(char** env)
 {
-    char* input = NULL;
-    size_t input_size = 0;
+    char input_buf[MAX_INPUT];
+    size_t input_len = 0;
 
     char** args;
     char* initial_directory = getcwd(NULL, 0);
@@ -131,36 +169,147 @@ void shell_loop(char** env)
     sa.sa_flags = 0;
     sigaction(SIGINT, &sa, NULL);
 
+    /* simple history */
+    #define HISTORY_SIZE 100
+    char* history[HISTORY_SIZE];
+    int history_count = 0;
+    int history_index = 0; /* used for navigation: range 0..history_count (history_count means current buffer) */
+    for (int i = 0; i < HISTORY_SIZE; ++i) history[i] = NULL;
+
     while (1)
     {
-        /* If we previously received SIGINT, clear the flag and continue so prompt is fresh */
-        if (sigint_received) sigint_received = 0;
+        /* reset input buffer and navigation index */
+        memset(input_buf, 0, sizeof(input_buf));
+        input_len = 0;
+        history_index = history_count; /* start at "current" (no selection) */
 
-        char* cwd = getcwd(NULL, 0);
-        if (cwd) {
-            printf("%s > ", cwd);
-            free(cwd);
-        } else {
-            printf("[unknown]> ");
-        }
-        fflush(stdout);
+        print_prompt();
 
-        errno = 0;
-        if (getline(&input, &input_size, stdin) == -1) // End of the file (EOF), ctrl + D
-        {
-            if (feof(stdin)) { /* user pressed Ctrl+D or stdin closed => exit shell loop cleanly */
-                break;
-            }
-            if (errno == EINTR) {
-                /* Interrupted by signal (likely Ctrl+C) — don't exit shell, reprint prompt */
-                continue;
-            }
-            perror("getline");
+        if (enable_raw_mode() == -1) {
+            perror("tcgetattr");
             break;
         }
 
-        args = parse_input(input);
+        while (1) {
+            char c;
+            ssize_t r = read(STDIN_FILENO, &c, 1);
+            if (r <= 0) {
+                disable_raw_mode();
+                break;
+            }
 
+            if (c == '\r' || c == '\n') { /* Enter */
+                putchar('\n');
+                disable_raw_mode();
+                break;
+            } else if (c == 127 || c == 8) { /* Backspace */
+                if (input_len > 0) {
+                    input_len--;
+                    input_buf[input_len] = '\0';
+                    /* erase char from terminal */
+                    printf("\b \b");
+                    fflush(stdout);
+                }
+            } else if (c == '\x1b') { /* Escape sequence: arrows */
+                char seq[2] = {0,0};
+                if (read(STDIN_FILENO, &seq[0], 1) <= 0) continue;
+                if (read(STDIN_FILENO, &seq[1], 1) <= 0) continue;
+                if (seq[0] == '[') {
+                    if (seq[1] == 'A') { /* Up */
+                        if (history_count == 0) continue;
+                        if (history_index > 0) history_index--;
+                        /* replace buffer with history[history_index] */
+                        const char* h = history[history_index];
+                        /* clear current displayed line after prompt */
+                        printf("\r");
+                        print_prompt();
+                        printf("\x1b[K"); /* clear to end of line */
+                        if (h) {
+                            strncpy(input_buf, h, sizeof(input_buf)-1);
+                            input_len = strlen(input_buf);
+                            printf("%s", input_buf);
+                            fflush(stdout);
+                        } else {
+                            input_buf[0] = '\0';
+                            input_len = 0;
+                        }
+                    } else if (seq[1] == 'B') { /* Down */
+                        if (history_count == 0) continue;
+                        if (history_index < history_count - 1) {
+                            history_index++;
+                            const char* h = history[history_index];
+                            printf("\r");
+                            print_prompt();
+                            printf("\x1b[K");
+                            if (h) {
+                                strncpy(input_buf, h, sizeof(input_buf)-1);
+                                input_len = strlen(input_buf);
+                                printf("%s", input_buf);
+                                fflush(stdout);
+                            }
+                        } else {
+                            /* move to "empty" current buffer */
+                            history_index = history_count;
+                            printf("\r");
+                            print_prompt();
+                            printf("\x1b[K");
+                            input_buf[0] = '\0';
+                            input_len = 0;
+                            fflush(stdout);
+                        }
+                    } else if (seq[1] == 'C' || seq[1] == 'D') {
+                        /* Right/Left arrows: intentionally disabled (ignore) */
+                        continue;
+                    }
+                }
+            } else if (c >= 32 && c <= 126) { /* printable */
+                if (input_len + 1 < sizeof(input_buf)) {
+                    input_buf[input_len++] = c;
+                    input_buf[input_len] = '\0';
+                    putchar(c);
+                    fflush(stdout);
+                    /* if user was navigating history and types, move to editing (empties selection) */
+                    history_index = history_count;
+                }
+            } else {
+                /* ignore other control characters */
+                continue;
+            }
+        } /* end char read loop */
+
+        /* if raw mode was left due to EOF */
+        if (!raw_enabled && feof(stdin)) break;
+
+        /* trim leading/trailing whitespace */
+        size_t start = 0;
+        while (start < input_len && (input_buf[start] == ' ' || input_buf[start] == '\t' || input_buf[start] == '\n')) start++;
+        size_t end = input_len;
+        while (end > start && (input_buf[end-1] == ' ' || input_buf[end-1] == '\t' || input_buf[end-1] == '\n')) end--;
+        size_t linelen = (end > start) ? (end - start) : 0;
+
+        if (linelen == 0) {
+            continue;
+        }
+
+        /* add to history (keep newest at end) */
+        if (linelen > 0) {
+            char* entry = malloc(linelen + 1);
+            if (entry) {
+                memcpy(entry, &input_buf[start], linelen);
+                entry[linelen] = '\0';
+                if (history_count == HISTORY_SIZE) {
+                    /* drop oldest */
+                    free(history[0]);
+                    memmove(&history[0], &history[1], (HISTORY_SIZE - 1) * sizeof(char*));
+                    history[HISTORY_SIZE - 1] = entry;
+                } else {
+                    history[history_count++] = entry;
+                }
+            }
+        }
+
+        /* parse & execute */
+        args = parse_input(&input_buf[start]);
         if (!args || !args[0]) {
             free_tokens(args);
             continue;
@@ -171,14 +320,16 @@ void shell_loop(char** env)
         } else {
             shell_builts(args, env, initial_directory);
         }
-
         free_tokens(args);
-    }
 
-    free(input);
+    } /* main while */
+
+    /* cleanup history */
+    for (int i = 0; i < history_count; ++i) free(history[i]);
+    disable_raw_mode();
     free(initial_directory);
     free(env);
-} 
+}
 
 int main (int argc, char** argv, char** env)
 {
