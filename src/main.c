@@ -144,10 +144,26 @@ static void print_prompt(void) {
     fflush(stdout);
 }
 
+static void refresh_display(const char* input_buf, size_t input_len, size_t cursor)
+{
+    printf("\r");
+    print_prompt();
+    printf("\x1b[K"); /* clear to end of line */
+    if (input_len > 0) {
+        /* print the whole buffer */
+        fwrite(input_buf, 1, input_len, stdout);
+    }
+    /* move cursor back to correct position */
+    size_t to_move = input_len > cursor ? input_len - cursor : 0;
+    for (size_t m = 0; m < to_move; ++m) printf("\x1b[D");
+    fflush(stdout);
+}
+
 void shell_loop(char** env)
 {
     char input_buf[MAX_INPUT];
     size_t input_len = 0;
+    size_t cursor = 0;
 
     char** args;
     char* initial_directory = getcwd(NULL, 0);
@@ -173,7 +189,7 @@ void shell_loop(char** env)
     #define HISTORY_SIZE 100
     char* history[HISTORY_SIZE];
     int history_count = 0;
-    int history_index = 0; /* used for navigation: range 0..history_count (history_count means current buffer) */
+    int history_index = 0; /* navigation index */
     for (int i = 0; i < HISTORY_SIZE; ++i) history[i] = NULL;
 
     while (1)
@@ -181,6 +197,7 @@ void shell_loop(char** env)
         /* reset input buffer and navigation index */
         memset(input_buf, 0, sizeof(input_buf));
         input_len = 0;
+        cursor = 0;
         history_index = history_count; /* start at "current" (no selection) */
 
         print_prompt();
@@ -203,14 +220,14 @@ void shell_loop(char** env)
                 disable_raw_mode();
                 break;
             } else if (c == 127 || c == 8) { /* Backspace */
-                if (input_len > 0) {
-                    input_len--;
-                    input_buf[input_len] = '\0';
-                    /* erase char from terminal */
-                    printf("\b \b");
-                    fflush(stdout);
-                }
-            } else if (c == '\x1b') { /* Escape sequence: arrows */
+                 if (cursor > 0) {
+                     /* remove char before cursor */
+                     memmove(&input_buf[cursor - 1], &input_buf[cursor], input_len - cursor + 1); /* include null */
+                     input_len--;
+                     cursor--;
+                    refresh_display(input_buf, input_len, cursor);
+                 }
+             } else if (c == '\x1b') { /* Escape sequence: arrows */
                 char seq[2] = {0,0};
                 if (read(STDIN_FILENO, &seq[0], 1) <= 0) continue;
                 if (read(STDIN_FILENO, &seq[1], 1) <= 0) continue;
@@ -218,63 +235,61 @@ void shell_loop(char** env)
                     if (seq[1] == 'A') { /* Up */
                         if (history_count == 0) continue;
                         if (history_index > 0) history_index--;
-                        /* replace buffer with history[history_index] */
                         const char* h = history[history_index];
-                        /* clear current displayed line after prompt */
-                        printf("\r");
-                        print_prompt();
-                        printf("\x1b[K"); /* clear to end of line */
                         if (h) {
                             strncpy(input_buf, h, sizeof(input_buf)-1);
                             input_len = strlen(input_buf);
-                            printf("%s", input_buf);
-                            fflush(stdout);
+                            cursor = input_len;
                         } else {
                             input_buf[0] = '\0';
-                            input_len = 0;
+                            input_len = cursor = 0;
                         }
+                        refresh_display(input_buf, input_len, cursor);
                     } else if (seq[1] == 'B') { /* Down */
                         if (history_count == 0) continue;
                         if (history_index < history_count - 1) {
                             history_index++;
                             const char* h = history[history_index];
-                            printf("\r");
-                            print_prompt();
-                            printf("\x1b[K");
                             if (h) {
                                 strncpy(input_buf, h, sizeof(input_buf)-1);
                                 input_len = strlen(input_buf);
-                                printf("%s", input_buf);
-                                fflush(stdout);
+                                cursor = input_len;
                             }
                         } else {
-                            /* move to "empty" current buffer */
                             history_index = history_count;
-                            printf("\r");
-                            print_prompt();
-                            printf("\x1b[K");
                             input_buf[0] = '\0';
-                            input_len = 0;
-                            fflush(stdout);
+                            input_len = cursor = 0;
                         }
-                    } else if (seq[1] == 'C' || seq[1] == 'D') {
-                        /* Right/Left arrows: intentionally disabled (ignore) */
-                        continue;
-                    }
-                }
-            } else if (c >= 32 && c <= 126) { /* printable */
-                if (input_len + 1 < sizeof(input_buf)) {
-                    input_buf[input_len++] = c;
-                    input_buf[input_len] = '\0';
-                    putchar(c);
-                    fflush(stdout);
-                    /* if user was navigating history and types, move to editing (empties selection) */
-                    history_index = history_count;
-                }
-            } else {
-                /* ignore other control characters */
-                continue;
-            }
+                        refresh_display(input_buf, input_len, cursor);
+                    } else if (seq[1] == 'C') { /* Right */
+                         if (cursor < input_len) {
+                             printf("\x1b[C");
+                             cursor++;
+                             fflush(stdout);
+                         }
+                     } else if (seq[1] == 'D') { /* Left */
+                         if (cursor > 0) {
+                             printf("\x1b[D");
+                             cursor--;
+                             fflush(stdout);
+                         }
+                     }
+                 }
+             } else if ((unsigned char)c >= 32 && (unsigned char)c <= 126) { /* printable */
+                 if (input_len + 1 < sizeof(input_buf)) {
+                     /* insert at cursor */
+                     memmove(&input_buf[cursor + 1], &input_buf[cursor], input_len - cursor + 1);
+                     input_buf[cursor] = c;
+                     input_len++;
+                     cursor++;
+                    refresh_display(input_buf, input_len, cursor);
+                     /* if user was navigating history and types, move to editing (empties selection) */
+                     history_index = history_count;
+                 }
+             } else {
+                 /* ignore other control characters */
+                 continue;
+             }
         } /* end char read loop */
 
         /* if raw mode was left due to EOF */

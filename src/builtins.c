@@ -106,7 +106,7 @@ int command_help(char** args, char** env)
     (void)env;
     if (!args[1]) {
         printf("Usage: help <command>\n");
-        printf("Try: help cd | help pwd | help echo | help env | help setenv | help unsetenv | help which | help ls | help exit\n");
+        printf("Try: help cd | help pwd | help ls | help cp | help rm | help chmod | help uname | help df | help top\n");
         return 0;
     }
 
@@ -120,30 +120,78 @@ int command_help(char** args, char** env)
         printf("pwd\n");
         printf("  Print the current working directory.\n");
         printf("  Example: pwd\n");
-    } else if (my_strcmp(cmd, "echo") == 0) {
-        printf("echo [-n] <text>\n");
-        printf("  Print the given text. Use -n to avoid trailing newline.\n");
-        printf("  Example: echo Hello World\n");
-    } else if (my_strcmp(cmd, "env") == 0) {
-        printf("env\n");
-        printf("  Display all environment variables.\n");
-        printf("  Example: env\n");
-    } else if (my_strcmp(cmd, "setenv") == 0) {
-        printf("setenv VAR=value    OR    setenv <variable> <value>\n");
-        printf("  Set an environment variable.\n");
-        printf("  Example: setenv PATH=/usr/bin\n");
-    } else if (my_strcmp(cmd, "unsetenv") == 0) {
-        printf("unsetenv <variable>\n");
-        printf("  Remove an environment variable.\n");
-        printf("  Example: unsetenv MYVAR\n");
-    } else if (my_strcmp(cmd, "which") == 0) {
-        printf("which <command>\n");
-        printf("  Locate an executable in the system PATH or indicate built-in.\n");
-        printf("  Example: which ls\n");
     } else if (my_strcmp(cmd, "ls") == 0) {
         printf("ls [options] [file...]\n");
         printf("  List directory contents. The shell appends -F by default to mark directories with '/'.\n");
         printf("  Example: ls -la\n");
+    } else if (my_strcmp(cmd, "mkdir") == 0) {
+        printf("mkdir <directory>\n");
+        printf("  Create a new directory.\n");
+        printf("  Example: mkdir mydir\n");
+    } else if (my_strcmp(cmd, "rmdir") == 0) {
+        printf("rmdir <directory>\n");
+        printf("  Remove an empty directory.\n");
+        printf("  Example: rmdir mydir\n");
+    } else if (my_strcmp(cmd, "touch") == 0) {
+        printf("touch <file>\n");
+        printf("  Create an empty file or update file timestamps.\n");
+        printf("  Example: touch file.txt\n");
+    } else if (my_strcmp(cmd, "cp") == 0) {
+        printf("cp <source> <dest>\n");
+        printf("  Copy files or directories (use -r for directories).\n");
+        printf("  Example: cp file.txt /tmp/file.txt\n");
+    } else if (my_strcmp(cmd, "mv") == 0) {
+        printf("mv <source> <dest>\n");
+        printf("  Move or rename files/directories.\n");
+        printf("  Example: mv oldname newname\n");
+    } else if (my_strcmp(cmd, "rm") == 0) {
+        printf("rm [options] <file>\n");
+        printf("  Remove files or directories (use -r to remove directories).\n");
+        printf("  Example: rm -r mydir\n");
+    } else if (my_strcmp(cmd, "cat") == 0) {
+        printf("cat <file>\n");
+        printf("  Concatenate and print file(s) to stdout.\n");
+        printf("  Example: cat file.txt\n");
+    } else if (my_strcmp(cmd, "less") == 0) {
+        printf("less <file>\n");
+        printf("  Pager to view files interactively (q to quit).\n");
+        printf("  Example: less /var/log/syslog\n");
+    } else if (my_strcmp(cmd, "head") == 0) {
+        printf("head [options] <file>\n");
+        printf("  Show the first lines of a file (default 10 lines).\n");
+        printf("  Example: head -n 20 file.txt\n");
+    } else if (my_strcmp(cmd, "tail") == 0) {
+        printf("tail [options] <file>\n");
+        printf("  Show the last lines of a file (use -f to follow).\n");
+        printf("  Example: tail -f /var/log/syslog\n");
+    } else if (my_strcmp(cmd, "nano") == 0) {
+        printf("nano <file>\n");
+        printf("  Simple terminal text editor.\n");
+        printf("  Example: nano file.txt\n");
+    } else if (my_strcmp(cmd, "vim") == 0) {
+        printf("vim <file>\n");
+        printf("  Modal terminal text editor (advanced).\n");
+        printf("  Example: vim file.txt\n");
+    } else if (my_strcmp(cmd, "chmod") == 0) {
+        printf("chmod <mode> <file>\n");
+        printf("  Change file permissions (e.g. 755).\n");
+        printf("  Example: chmod 755 script.sh\n");
+    } else if (my_strcmp(cmd, "chown") == 0) {
+        printf("chown <owner>[:<group>] <file>\n");
+        printf("  Change file owner and group.\n");
+        printf("  Example: chown user:staff file.txt\n");
+    } else if (my_strcmp(cmd, "uname") == 0 || (my_strcmp(cmd, "uname -a") == 0)) {
+        printf("uname -a\n");
+        printf("  Print system information (kernel, hostname, architecture).\n");
+        printf("  Example: uname -a\n");
+    } else if (my_strcmp(cmd, "df") == 0 || (my_strcmp(cmd, "df -h") == 0)) {
+        printf("df -h\n");
+        printf("  Show disk space usage in human-readable form.\n");
+        printf("  Example: df -h\n");
+    } else if (my_strcmp(cmd, "top") == 0) {
+        printf("top\n");
+        printf("  Interactive process viewer (press q to quit).\n");
+        printf("  Example: top\n");
     } else if (my_strcmp(cmd, "exit") == 0 || my_strcmp(cmd, "quit") == 0) {
         printf("exit\n");
         printf("  Exit the shell.\n");
