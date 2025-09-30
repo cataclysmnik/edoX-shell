@@ -45,6 +45,8 @@ int shell_builts(char** args, char** env, char* initial_directory)
     } else if (my_strcmp(args[0], ".help") == 0) {
         display_help();
         return 0;
+    } else if (my_strcmp(args[0], "help") == 0) {
+        return command_help(args, env);
     } else if (my_strcmp(args[0], "exit") == 0 || my_strcmp(args[0], "quit") == 0) {
         exit(EXIT_SUCCESS);
     } else {

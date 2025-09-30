@@ -89,7 +89,7 @@ int child_process(char** args, char** env)
     snprintf(full_cwd_path, sizeof(full_cwd_path), "%s/%s", cwd, args[0]);
     execve(full_cwd_path, args, env);
 
-    perror("execve");
+    // perror("execve");
     
     return 1;
 }

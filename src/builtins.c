@@ -5,34 +5,7 @@ int command_cd(char** args, char* init_dir)
 {
     (void)init_dir;
     if (args[1] == NULL) {
-        /* climb to the highest level by repeatedly going up until getcwd() no longer changes */
-        char *prev = getcwd(NULL, 0);
-        if (!prev) {
-            perror("getcwd");
-            return 1;
-        }
-
-        while (1) {
-            if (chdir("..") != 0) {
-                /* can't go up any further */
-                break;
-            }
-            char *cwd = getcwd(NULL, 0);
-            if (!cwd) {
-                perror("getcwd");
-                break;
-            }
-            /* if path didn't change, we've reached the top */
-            if (my_strcmp(prev, cwd) == 0) {
-                free(cwd);
-                break;
-            }
-            free(prev);
-            prev = cwd;
-        }
-
-        free(prev);
-        return 0;
+        printf("cd: expected argument \"cd [path]\"\n");
     } else if (chdir(args[1]) == 0) {
         // printf("CD worked!\n");
     } else {
@@ -125,6 +98,64 @@ int command_which(char** args, char** env)
         printf("which: %s command not found\n", args[1]);
         return 1;
     }
+}
+
+// ---------------------- new help command ----------------------
+int command_help(char** args, char** env)
+{
+    (void)env;
+    if (!args[1]) {
+        printf("Usage: help <command>\n");
+        printf("Try: help cd | help pwd | help echo | help env | help setenv | help unsetenv | help which | help ls | help exit\n");
+        return 0;
+    }
+
+    const char* cmd = args[1];
+
+    if (my_strcmp(cmd, "cd") == 0) {
+        printf("cd <directory>\n");
+        printf("  Change the current directory.\n");
+        printf("  Example: cd /tmp\n");
+    } else if (my_strcmp(cmd, "pwd") == 0) {
+        printf("pwd\n");
+        printf("  Print the current working directory.\n");
+        printf("  Example: pwd\n");
+    } else if (my_strcmp(cmd, "echo") == 0) {
+        printf("echo [-n] <text>\n");
+        printf("  Print the given text. Use -n to avoid trailing newline.\n");
+        printf("  Example: echo Hello World\n");
+    } else if (my_strcmp(cmd, "env") == 0) {
+        printf("env\n");
+        printf("  Display all environment variables.\n");
+        printf("  Example: env\n");
+    } else if (my_strcmp(cmd, "setenv") == 0) {
+        printf("setenv VAR=value    OR    setenv <variable> <value>\n");
+        printf("  Set an environment variable.\n");
+        printf("  Example: setenv PATH=/usr/bin\n");
+    } else if (my_strcmp(cmd, "unsetenv") == 0) {
+        printf("unsetenv <variable>\n");
+        printf("  Remove an environment variable.\n");
+        printf("  Example: unsetenv MYVAR\n");
+    } else if (my_strcmp(cmd, "which") == 0) {
+        printf("which <command>\n");
+        printf("  Locate an executable in the system PATH or indicate built-in.\n");
+        printf("  Example: which ls\n");
+    } else if (my_strcmp(cmd, "ls") == 0) {
+        printf("ls [options] [file...]\n");
+        printf("  List directory contents. The shell appends -F by default to mark directories with '/'.\n");
+        printf("  Example: ls -la\n");
+    } else if (my_strcmp(cmd, "exit") == 0 || my_strcmp(cmd, "quit") == 0) {
+        printf("exit\n");
+        printf("  Exit the shell.\n");
+        printf("  Example: exit\n");
+    } else if (my_strcmp(cmd, "help") == 0 || my_strcmp(cmd, ".help") == 0) {
+        printf("help <command>\n");
+        printf("  Show help for a builtin or frequently used external command.\n");
+        printf("  Example: help cd\n");
+    } else {
+        printf("help: no help available for '%s'\n", cmd);
+    }
+    return 0;
 }
 
 // Function to search for the command in PATH
