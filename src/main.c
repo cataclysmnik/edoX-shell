@@ -1,4 +1,5 @@
 #include "my_shell.h"
+#include <stdlib.h>
 
 // Shell loop
 // Input Parsing
@@ -26,6 +27,8 @@ void display_help() {
 // Binary: ls, cat.. we'll use executor
 int shell_builts(char** args, char** env, char* initial_directory)
 {
+    if (!args || !args[0]) return 0;
+
     if (my_strcmp(args[0], "cd") == 0) {
         return command_cd(args, initial_directory);
     } else if (my_strcmp(args[0], "pwd") == 0) {
@@ -42,7 +45,45 @@ int shell_builts(char** args, char** env, char* initial_directory)
     } else if (my_strcmp(args[0], "exit") == 0 || my_strcmp(args[0], "quit") == 0) {
         exit(EXIT_SUCCESS);
     } else {
-        // Not a built-in command, execute as external command
+        /* Intercept ls and add -F if user didn't provide it so directories are suffixed with '/' */
+        if (my_strcmp(args[0], "ls") == 0) {
+            int has_flag = 0;
+            for (size_t i = 1; args[i]; i++) {
+                if (my_strcmp(args[i], "-F") == 0 ||
+                    my_strcmp(args[i], "-p") == 0 ||
+                    my_strcmp(args[i], "--classify") == 0) {
+                    has_flag = 1;
+                    break;
+                }
+            }
+            if (!has_flag) {
+                /* count existing args (including final NULL) */
+                size_t count = 0;
+                while (args[count]) count++;
+
+                /* new_args: original args plus one flag and the NULL terminator */
+                char** new_args = malloc((count + 1 + 1) * sizeof(char*));
+                if (!new_args) {
+                    perror("malloc");
+                    return executor(args, env);
+                }
+
+                new_args[0] = args[0];
+                new_args[1] = my_strdup("-F");
+                for (size_t i = 1; i <= count; i++) { /* copy args[1..count] where args[count] == NULL */
+                    new_args[i + 1] = args[i];
+                }
+
+                int ret = executor(new_args, env);
+
+                /* free only the array and the added flag string; original token strings remain owned by parse_input/free_tokens */
+                free(new_args[1]);
+                free(new_args);
+                return ret;
+            }
+        }
+
+        /* default: execute external command */
         return executor(args, env);
     }
     return 0;
@@ -56,7 +97,16 @@ void shell_loop(char** env)
     char** args;
     char* initial_directory = getcwd(NULL, 0);
 
-    printf("Type .help for a list of available commands.\n");
+    /* Clear the terminal and show a big "edoX" banner on startup */
+    system("clear");
+    printf("\n");
+    printf("  _____    ____     ____    __   __ \n");
+    printf(" |  ___|  |  _ \\   / __ \\   \\ \\ / / \n");
+    printf(" | |__    | | | | | |  | |   \\ V /  \n");
+    printf(" |  __|   | | | | | |  | |    > <   \n");
+    printf(" | |___   | |_| | | |__| |   / . \\  \n");
+    printf(" |_____|  |____/   \\____/   /_/ \\_\\ \n\n");
+    // printf("Type .help for a list of available commands.\n");
 
     while (1)
     {
