@@ -49,6 +49,8 @@ int shell_builts(char** args, char** env, char* initial_directory)
         return 0;
     } else if (my_strcmp(args[0], "help") == 0) {
         return command_help(args, env);
+    } else if (my_strcmp(args[0], "run") == 0) {
+        return command_run(args, env);
     } else if (my_strcmp(args[0], "exit") == 0 || my_strcmp(args[0], "quit") == 0) {
         exit(EXIT_SUCCESS);
     } else {
@@ -344,14 +346,13 @@ void shell_loop(char** env)
     disable_raw_mode();
     free(initial_directory);
     free(env);
-}
+}  /* end shell_loop */
 
-int main (int argc, char** argv, char** env)
+/* Program entry point */
+int main(int argc, char** argv, char** env)
 {
     (void)argc;
     (void)argv;
-
     shell_loop(env);
-
     return 0;
 }

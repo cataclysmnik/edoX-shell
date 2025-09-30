@@ -1,4 +1,10 @@
 #include "my_shell.h"
+#include <limits.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <sys/wait.h>   // <--- added
 
 // cd, cd [path], cd - (previous dir), cd ~ (home dir), cd .., handle non exsiting dirs, permission issues
 int command_cd(char** args, char* init_dir)
@@ -204,6 +210,125 @@ int command_help(char** args, char** env)
         printf("help: no help available for '%s'\n", cmd);
     }
     return 0;
+}
+
+// ---------------------- new run command ----------------------
+int command_run(char** args, char** env)
+{
+    if (!args[1]) {
+        printf("Usage: run <file> [args...]\n");
+        return 1;
+    }
+
+    const char* file = args[1];
+    const char* extp = strrchr(file, '.');
+    if (!extp || extp[1] == '\0') {
+        printf("run: unknown file type for '%s'\n", file);
+        return 1;
+    }
+    const char* ext = extp + 1;
+
+    /* helper to count extra args after the filename (args[2..]) */
+    int extra = 0;
+    while (args[2 + extra]) extra++;
+
+    if (my_strcmp(ext, "c") == 0 || my_strcmp(ext, "cpp") == 0 ||
+        my_strcmp(ext, "cc") == 0 || my_strcmp(ext, "cxx") == 0)
+    {
+        /* choose compiler */
+        const char* compiler = my_strcmp(ext, "c") == 0 ? "gcc" : "g++";
+
+        /* compile to a temp executable in /tmp */
+        char outpath[PATH_MAX];
+        snprintf(outpath, sizeof(outpath), "/tmp/edox_run_%d", (int)getpid());
+
+        char* compile_cmd[] = { (char*)compiler, (char*)file, "-o", outpath, NULL };
+        executor(compile_cmd, env);
+
+        if (access(outpath, X_OK) != 0) {
+            printf("run: compilation failed for '%s'\n", file);
+            return 1;
+        }
+
+        /* build argv for the compiled program: outpath, then any extra args */
+        int run_argc = 1 + extra;
+        char** run_argv = malloc((run_argc + 1) * sizeof(char*));
+        if (!run_argv) { perror("malloc"); unlink(outpath); return 1; }
+        run_argv[0] = strdup(outpath);
+        for (int i = 0; i < extra; ++i) {
+            run_argv[1 + i] = strdup(args[2 + i]);
+        }
+        run_argv[run_argc] = NULL;
+
+        /* fork and execve the absolute path to avoid executor path searching */
+        pid_t pid = fork();
+        if (pid == -1) {
+            perror("fork");
+            for (int i = 0; i < run_argc; ++i) free(run_argv[i]);
+            free(run_argv);
+            unlink(outpath);
+            return 1;
+        }
+        if (pid == 0) {
+            execve(outpath, run_argv, env);
+            perror("execve");
+            _exit(EXIT_FAILURE);
+        } else {
+            int status = 0;
+            waitpid(pid, &status, 0);
+            /* cleanup */
+            for (int i = 0; i < run_argc; ++i) free(run_argv[i]);
+            free(run_argv);
+            unlink(outpath);
+            return WIFEXITED(status) ? WEXITSTATUS(status) : 1;
+        }
+    }
+    else if (my_strcmp(ext, "py") == 0) {
+        /* run with python3, pass through extra args */
+        char** cmd = malloc((2 + extra + 1) * sizeof(char*));
+        if (!cmd) { perror("malloc"); return 1; }
+        cmd[0] = my_strdup("python3");
+        cmd[1] = my_strdup(file);
+        for (int i = 0; i < extra; ++i) {
+            cmd[2 + i] = my_strdup(args[2 + i]);
+        }
+        cmd[2 + extra] = NULL;
+        int ret = executor(cmd, env);
+        for (int i = 0; i < 2 + extra; ++i) free(cmd[i]);
+        free(cmd);
+        return ret;
+    }
+    else if (my_strcmp(ext, "java") == 0) {
+        /* javac file.java && java -cp dir ClassName */
+        char* javac_args[] = { "javac", (char*)file, NULL };
+        executor(javac_args, env);
+
+        const char* slash = strrchr(file, '/');
+        const char* fname = slash ? slash + 1 : file;
+        size_t flen = strlen(fname);
+        char class_name[NAME_MAX];
+        if (flen > 5 && strcmp(fname + flen - 5, ".java") == 0) {
+            memcpy(class_name, fname, flen - 5);
+            class_name[flen - 5] = '\0';
+        } else {
+            printf("run: unexpected java filename '%s'\n", file);
+            return 1;
+        }
+
+        char class_dir[PATH_MAX];
+        if (slash) {
+            snprintf(class_dir, sizeof(class_dir), "%.*s", (int)(slash - file), file);
+        } else {
+            snprintf(class_dir, sizeof(class_dir), ".");
+        }
+
+        /* build java argv (no extra arg forwarding for now) */
+        char* java_args[] = { "java", "-cp", class_dir, class_name, NULL };
+        return executor(java_args, env);
+    } else {
+        printf("run: unsupported extension '.%s'\n", ext);
+        return 1;
+    }
 }
 
 // Function to search for the command in PATH
