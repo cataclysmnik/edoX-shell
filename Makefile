@@ -1,6 +1,6 @@
 TARGET = edosh
 SRC_DIR = src
-OBJ = $(SRC_DIR)/main.c $(SRC_DIR)/input_parser.c $(SRC_DIR)/helpers.c $(SRC_DIR)/builtins.c $(SRC_DIR)/executor.c
+OBJ = $(SRC_DIR)/main.c $(SRC_DIR)/input_parser.c $(SRC_DIR)/helpers.c $(SRC_DIR)/builtins.c $(SRC_DIR)/executor.c $(SRC_DIR)/help.c
 CFLAGS = -Wall -Wextra -Werror
 CC = gcc
 

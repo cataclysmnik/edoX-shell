@@ -19,12 +19,14 @@ void display_help() {
     printf("Available commands:\n");
     printf("\tcd <directory>      - Change the current directory.\n");
     printf("\tpwd                 - Print the current working directory.\n");
+    printf("\trun <file>          - Compile and run the given file.\n");
     printf("\techo <text>         - Print the given text.\n");
     printf("\tenv                 - Display all environment variables.\n");
     printf("\tsetenv VAR=value    - Set an environment variable.\n");
     printf("\tunsetenv <variable> - Remove an environment variable.\n");
     printf("\twhich <command>     - Locate an executable in the system's PATH.\n");
     printf("\t.help               - Display this help message.\n");
+    printf("\thelp <command>      - Display help messages with examples for certain commands.\n");
     printf("\texit or quit        - Exit the shell.\n");
 }
 
@@ -138,7 +140,7 @@ static int enable_raw_mode(void) {
 static void print_prompt(void) {
     char* cwd = getcwd(NULL, 0);
     if (cwd) {
-        printf("%s > ", cwd);
+        printf("[edosh] %s > ", cwd);
         free(cwd);
     } else {
         printf("[unknown]> ");
@@ -179,6 +181,8 @@ void shell_loop(char** env)
     printf(" |  __|   | | | | | |  | |    > <   \n");
     printf(" | |___   | |_| | | |__| |   / . \\  \n");
     printf(" |_____|  |____/   \\____/   /_/ \\_\\ \n\n");
+
+    printf("\nEnter .help for help.\n");
 
     /* install our SIGINT handler for the interactive prompt */
     struct sigaction sa;
