@@ -56,7 +56,8 @@ int shell_builts(char** args, char** env, char* initial_directory)
     } else if (my_strcmp(args[0], "run") == 0) {
         return command_run(args, env);
     } else if (my_strcmp(args[0], "exit") == 0 || my_strcmp(args[0], "quit") == 0) {
-        exit(EXIT_SUCCESS);
+        /* signal caller to exit cleanly */
+        return -1;
     } else {
         /* Intercept ls and add -F if user didn't provide it so directories are suffixed with '/' */
         if (my_strcmp(args[0], "ls") == 0) {
@@ -349,7 +350,16 @@ void shell_loop(char** env)
         } else if (my_strcmp(args[0], "unsetenv") == 0) {
             env = command_unsetenv(args, env);
         } else {
-            shell_builts(args, env, initial_directory);
+            int sb = shell_builts(args, env, initial_directory);
+            /* if shell_builts signalled exit (-1), clean up and break */
+            if (sb == -1) {
+                free_tokens(args);
+                /* ensure terminal state restored before exiting */
+                disable_raw_mode();
+                /* free history and other resources will be done after loop */
+                need_leading_newline = false;
+                break;
+            }
         }
         free_tokens(args);
         /* mark that a command executed so next prompt is preceded by a newline */
@@ -361,7 +371,10 @@ void shell_loop(char** env)
     for (int i = 0; i < history_count; ++i) free(history[i]);
     disable_raw_mode();
     free(initial_directory);
-    free(env);
+    /* Do NOT free 'env' here — it may point to the process environment or memory
+       not allocated by this code. Freeing it causes crashes. If you want to
+       manage env ownership, track allocations returned by setenv/unsetenv and
+       free only those specific buffers. */
 }  /* end shell_loop */
 
 /* Program entry point */
