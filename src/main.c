@@ -5,6 +5,8 @@
 #include <unistd.h>
 #include <termios.h>
 #include <string.h>
+#include <time.h>
+#include <stdbool.h>
 
 // Shell loop
 // Input Parsing
@@ -172,6 +174,9 @@ void shell_loop(char** env)
     char** args;
     char* initial_directory = getcwd(NULL, 0);
 
+    /* print a blank line before the next prompt when the previous input executed */
+    bool need_leading_newline = false;
+
     /* Clear the terminal and show a big "edoX" banner on startup */
     system("clear");
     printf("\n");
@@ -206,6 +211,11 @@ void shell_loop(char** env)
         cursor = 0;
         history_index = history_count; /* start at "current" (no selection) */
 
+        /* if the previous command ran, print an extra newline before showing the prompt */
+        if (need_leading_newline) {
+            putchar('\n');
+            need_leading_newline = false;
+        }
         print_prompt();
 
         if (enable_raw_mode() == -1) {
@@ -342,6 +352,8 @@ void shell_loop(char** env)
             shell_builts(args, env, initial_directory);
         }
         free_tokens(args);
+        /* mark that a command executed so next prompt is preceded by a newline */
+        need_leading_newline = true;
 
     } /* main while */
 

@@ -10,14 +10,46 @@
 int command_cd(char** args, char* init_dir)
 {
     (void)init_dir;
+
+    /* If no argument, climb to the highest reachable level by repeatedly chdir("..")
+       until getcwd() stops changing or chdir fails. */
     if (args[1] == NULL) {
-        printf("cd: expected argument \"cd [path]\"\n");
-    } else if (chdir(args[1]) == 0) {
-        // printf("CD worked!\n");
-    } else {
-        perror("CD");
+        char *prev = getcwd(NULL, 0);
+        if (!prev) {
+            perror("getcwd");
+            return 1;
+        }
+
+        while (1) {
+            if (chdir("..") != 0) {
+                /* Can't go up further (permission or other error) */
+                break;
+            }
+            char *cwd = getcwd(NULL, 0);
+            if (!cwd) {
+                perror("getcwd");
+                break;
+            }
+            /* If path didn't change, we've reached the top */
+            if (strcmp(prev, cwd) == 0) {
+                free(cwd);
+                break;
+            }
+            free(prev);
+            prev = cwd;
+        }
+
+        free(prev);
+        return 0;
     }
-    return 0;
+
+    /* Otherwise behave like normal cd <path> */
+    if (chdir(args[1]) == 0) {
+        return 0;
+    } else {
+        perror("cd");
+        return 1;
+    }
 }
 
 int command_pwd()
