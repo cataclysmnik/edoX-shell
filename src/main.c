@@ -142,7 +142,7 @@ static int enable_raw_mode(void) {
 static void print_prompt(void) {
     char* cwd = getcwd(NULL, 0);
     if (cwd) {
-        printf("[edosh] %s > ", cwd);
+        printf("%s > ", cwd);
         free(cwd);
     } else {
         printf("[unknown]> ");
@@ -180,14 +180,14 @@ void shell_loop(char** env)
     /* Clear the terminal and show a big "edoX" banner on startup */
     system("clear");
     printf("\n");
-    printf("  _____    ____     ____    __   __ \n");
-    printf(" |  ___|  |  _ \\   / __ \\   \\ \\ / / \n");
-    printf(" | |__    | | | | | |  | |   \\ V /  \n");
-    printf(" |  __|   | | | | | |  | |    > <   \n");
-    printf(" | |___   | |_| | | |__| |   / . \\  \n");
-    printf(" |_____|  |____/   \\____/   /_/ \\_\\ \n\n");
+    printf("  _____   ____     ____   __   __ \n");
+    printf(" |  ___| |  _ \\   / __ \\  \\ \\ / / \n");
+    printf(" | |__   | | | | | |  | |  \\ V /  \n");
+    printf(" |  __|  | | | | | |  | |   > <   \n");
+    printf(" | |___  | |_| | | |__| |  / . \\  \n");
+    printf(" |_____| |____/   \\____/  /_/ \\_\\ \n\n");
 
-    printf("\nEnter .help for help.\n");
+    printf("\nEnter .help for help.\n\n");
 
     /* install our SIGINT handler for the interactive prompt */
     struct sigaction sa;
