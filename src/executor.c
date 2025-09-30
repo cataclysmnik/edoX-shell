@@ -1,4 +1,5 @@
 #include "my_shell.h"
+#include <signal.h>
 
 // Executes a command by forking and running it in a child process
 int executor(char** args, char** env)
@@ -6,31 +7,50 @@ int executor(char** args, char** env)
     pid_t pid;
     int status;
 
+    /* ignore SIGINT in parent around fork so parent isn't terminated by Ctrl+C
+       save old action to restore after child finishes */
+    struct sigaction sa_ignore, sa_old;
+    sa_ignore.sa_handler = SIG_IGN;
+    sigemptyset(&sa_ignore.sa_mask);
+    sa_ignore.sa_flags = 0;
+    sigaction(SIGINT, &sa_ignore, &sa_old);
+
     pid = fork();
     if (pid == -1) {
+        /* restore previous handler before returning */
+        sigaction(SIGINT, &sa_old, NULL);
         perror("fork");
         return 1;
     }
 
-    if (pid == 0) // child process
-    { 
+    if (pid == 0) {
+        /* In child: restore default SIGINT behavior so child is interruptible */
+        struct sigaction sa_default;
+        sa_default.sa_handler = SIG_DFL;
+        sigemptyset(&sa_default.sa_mask);
+        sa_default.sa_flags = 0;
+        sigaction(SIGINT, &sa_default, NULL);
+
         if (child_process(args, env)) {
             perror("execve");
-            return 1;
+            /* if execve fails, exit the child */
+            _exit(EXIT_FAILURE);
         }
     } 
     else // Parent process
-    { 
+    {
         if (waitpid(pid, &status, 0) == -1) {
+            /* restore previous handler before returning */
+            sigaction(SIGINT, &sa_old, NULL);
             perror("waitpid");
             return 1;
         }
+        /* restore parent's previous SIGINT handling (likely our interactive handler) */
+        sigaction(SIGINT, &sa_old, NULL);
+
         if (WIFSIGNALED(status)) {
             printf("Process terminated by signal: %d\n", WTERMSIG(status));
         }
-        // if (WTERMSIG(status) == SIGSEGV) {
-        //     perror("segmentation fault");
-        // }
     }
     return 1;
 }

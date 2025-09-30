@@ -1,5 +1,8 @@
 #include "my_shell.h"
 #include <stdlib.h>
+#include <signal.h>
+#include <errno.h>
+#include <unistd.h>
 
 // Shell loop
 // Input Parsing
@@ -89,6 +92,18 @@ int shell_builts(char** args, char** env, char* initial_directory)
     return 0;
 }
 
+/* flag set by handler to indicate an interrupt occurred */
+static volatile sig_atomic_t sigint_received = 0;
+
+/* async-signal-safe handler: set flag and write a newline */
+void sigint_handler(int signo)
+{
+    (void)signo;
+    sigint_received = 1;
+    /* write is async-signal-safe */
+    write(STDOUT_FILENO, "\n", 1);
+}
+
 void shell_loop(char** env)
 {
     char* input = NULL;
@@ -106,10 +121,19 @@ void shell_loop(char** env)
     printf(" |  __|   | | | | | |  | |    > <   \n");
     printf(" | |___   | |_| | | |__| |   / . \\  \n");
     printf(" |_____|  |____/   \\____/   /_/ \\_\\ \n\n");
-    // printf("Type .help for a list of available commands.\n");
+
+    /* install our SIGINT handler for the interactive prompt */
+    struct sigaction sa;
+    sa.sa_handler = sigint_handler;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = 0;
+    sigaction(SIGINT, &sa, NULL);
 
     while (1)
     {
+        /* If we previously received SIGINT, clear the flag and continue so prompt is fresh */
+        if (sigint_received) sigint_received = 0;
+
         char* cwd = getcwd(NULL, 0);
         if (cwd) {
             printf("%s > ", cwd);
@@ -117,16 +141,27 @@ void shell_loop(char** env)
         } else {
             printf("[unknown]> ");
         }
+        fflush(stdout);
+
+        errno = 0;
         if (getline(&input, &input_size, stdin) == -1) // End of the file (EOF), ctrl + D
         {
+            if (feof(stdin)) { /* user pressed Ctrl+D or stdin closed => exit shell loop cleanly */
+                break;
+            }
+            if (errno == EINTR) {
+                /* Interrupted by signal (likely Ctrl+C) — don't exit shell, reprint prompt */
+                continue;
+            }
             perror("getline");
             break;
-        }    
+        }
 
         args = parse_input(input);
 
-        if (!args[0]) {
-            return;
+        if (!args || !args[0]) {
+            free_tokens(args);
+            continue;
         } else if (my_strcmp(args[0], "setenv") == 0) {
             env = command_setenv(args, env);
         } else if (my_strcmp(args[0], "unsetenv") == 0) {
@@ -134,9 +169,12 @@ void shell_loop(char** env)
         } else {
             shell_builts(args, env, initial_directory);
         }
+
+        free_tokens(args);
     }
-    
-    free_tokens(args);
+
+    free(input);
+    free(initial_directory);
     free(env);
 } 
 

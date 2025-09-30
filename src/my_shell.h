@@ -3,6 +3,8 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <signal.h>
+#include <errno.h>
 
 #define MAX_INPUT 1024
 
@@ -37,3 +39,7 @@ char* my_strcpy         (char* dest, const char* src);
 char* my_strchr         (const char* str, char c);
 char* my_strtok         (char* input_string, const char* delimiter);
 char* my_strncpy        (char* dest, const char* src, size_t n);
+
+/* SIGINT handler used by the shell to avoid exiting on Ctrl+C.
+   Declared here so executor.c can restore the handler. */
+void sigint_handler(int signo);

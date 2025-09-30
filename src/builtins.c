@@ -5,7 +5,34 @@ int command_cd(char** args, char* init_dir)
 {
     (void)init_dir;
     if (args[1] == NULL) {
-        printf("cd: expected argument \"cd [path]\"\n");
+        /* climb to the highest level by repeatedly going up until getcwd() no longer changes */
+        char *prev = getcwd(NULL, 0);
+        if (!prev) {
+            perror("getcwd");
+            return 1;
+        }
+
+        while (1) {
+            if (chdir("..") != 0) {
+                /* can't go up any further */
+                break;
+            }
+            char *cwd = getcwd(NULL, 0);
+            if (!cwd) {
+                perror("getcwd");
+                break;
+            }
+            /* if path didn't change, we've reached the top */
+            if (my_strcmp(prev, cwd) == 0) {
+                free(cwd);
+                break;
+            }
+            free(prev);
+            prev = cwd;
+        }
+
+        free(prev);
+        return 0;
     } else if (chdir(args[1]) == 0) {
         // printf("CD worked!\n");
     } else {
