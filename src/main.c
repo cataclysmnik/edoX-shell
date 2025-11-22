@@ -140,10 +140,20 @@ static int enable_raw_mode(void) {
 }
 
 /* print prompt (cwd) */
-/* Get git repository information */
-static void get_git_info(char* branch, size_t branch_size, int* has_changes) {
-    *has_changes = 0;
-    branch[0] = '\0';
+/* Git status structure */
+typedef struct {
+    char branch[128];
+    int staged;
+    int unstaged;
+    int untracked;
+    int ahead;
+    int behind;
+    int is_git_repo;
+} git_status_t;
+
+/* Get detailed git repository information */
+static void get_git_info(git_status_t* status) {
+    memset(status, 0, sizeof(git_status_t));
     
     /* Check if we're in a git repository by looking for .git directory */
     if (access(".git", F_OK) != 0) {
@@ -153,9 +163,8 @@ static void get_git_info(char* branch, size_t branch_size, int* has_changes) {
         
         int found = 0;
         char test_path[MAX_INPUT];
-        char* pos = cwd;
         
-        while (*pos) {
+        while (*cwd) {
             snprintf(test_path, sizeof(test_path), "%s/.git", cwd);
             if (access(test_path, F_OK) == 0) {
                 found = 1;
@@ -168,29 +177,61 @@ static void get_git_info(char* branch, size_t branch_size, int* has_changes) {
             *last_slash = '\0';
         }
         
+        char* orig_cwd = getcwd(NULL, 0);
+        free(orig_cwd);
         free(cwd);
         if (!found) return;
     }
     
+    status->is_git_repo = 1;
+    
     /* Get current branch name */
     FILE* fp = popen("git symbolic-ref --short HEAD 2>/dev/null || git rev-parse --short HEAD 2>/dev/null", "r");
     if (fp) {
-        if (fgets(branch, branch_size, fp)) {
+        if (fgets(status->branch, sizeof(status->branch), fp)) {
             /* Remove trailing newline */
-            size_t len = strlen(branch);
-            if (len > 0 && branch[len-1] == '\n') {
-                branch[len-1] = '\0';
+            size_t len = strlen(status->branch);
+            if (len > 0 && status->branch[len-1] == '\n') {
+                status->branch[len-1] = '\0';
             }
         }
         pclose(fp);
     }
     
-    /* Check if there are uncommitted changes */
+    /* Get staged, unstaged, and untracked files count */
     fp = popen("git status --porcelain 2>/dev/null", "r");
     if (fp) {
         char line[256];
+        while (fgets(line, sizeof(line), fp)) {
+            if (strlen(line) < 2) continue;
+            
+            char x = line[0];  /* Index status */
+            char y = line[1];  /* Working tree status */
+            
+            /* Staged changes (index has changes) */
+            if (x != ' ' && x != '?') {
+                status->staged++;
+            }
+            
+            /* Unstaged changes (working tree has changes) */
+            if (y != ' ' && y != '?') {
+                status->unstaged++;
+            }
+            
+            /* Untracked files */
+            if (x == '?' && y == '?') {
+                status->untracked++;
+            }
+        }
+        pclose(fp);
+    }
+    
+    /* Get ahead/behind status relative to upstream */
+    fp = popen("git rev-list --left-right --count HEAD...@{upstream} 2>/dev/null", "r");
+    if (fp) {
+        char line[64];
         if (fgets(line, sizeof(line), fp)) {
-            *has_changes = 1;
+            sscanf(line, "%d\t%d", &status->ahead, &status->behind);
         }
         pclose(fp);
     }
@@ -200,23 +241,46 @@ static void print_prompt(void) {
     char* cwd = getcwd(NULL, 0);
     
     /* Get git info */
-    char git_branch[128] = "";
-    int has_changes = 0;
-    get_git_info(git_branch, sizeof(git_branch), &has_changes);
+    git_status_t git_status;
+    get_git_info(&git_status);
     
     if (cwd) {
         /* Print cwd in bright yellow */
         printf("\x1b[33;1m%s\x1b[0m", cwd);
         
         /* Print git info if in a git repo */
-        if (git_branch[0] != '\0') {
-            if (has_changes) {
-                /* Red color for dirty repo */
-                printf(" \x1b[31;1m(%s *)\x1b[0m", git_branch);
+        if (git_status.is_git_repo && git_status.branch[0] != '\0') {
+            /* Determine overall status color */
+            int has_any_changes = git_status.staged || git_status.unstaged || git_status.untracked;
+            
+            if (has_any_changes) {
+                /* Red/yellow color for dirty repo */
+                printf(" \x1b[33m(\x1b[36m%s\x1b[33m", git_status.branch);
             } else {
                 /* Green color for clean repo */
-                printf(" \x1b[32;1m(%s)\x1b[0m", git_branch);
+                printf(" \x1b[32m(\x1b[36m%s\x1b[32m", git_status.branch);
             }
+            
+            /* Show ahead/behind status */
+            if (git_status.ahead > 0) {
+                printf(" ↑%d", git_status.ahead);
+            }
+            if (git_status.behind > 0) {
+                printf(" ↓%d", git_status.behind);
+            }
+            
+            /* Show file status counts */
+            if (git_status.staged > 0) {
+                printf(" \x1b[32m+%d\x1b[0m\x1b[33m", git_status.staged);  /* Green for staged */
+            }
+            if (git_status.unstaged > 0) {
+                printf(" \x1b[31m~%d\x1b[0m\x1b[33m", git_status.unstaged);  /* Red for unstaged */
+            }
+            if (git_status.untracked > 0) {
+                printf(" \x1b[90m?%d\x1b[0m\x1b[33m", git_status.untracked);  /* Gray for untracked */
+            }
+            
+            printf(")\x1b[0m");
         }
         
         printf(" > ");
