@@ -31,11 +31,10 @@ int executor(char** args, char** env)
         sa_default.sa_flags = 0;
         sigaction(SIGINT, &sa_default, NULL);
 
-        if (child_process(args, env)) {
-            perror("execve");
-            /* if execve fails, exit the child */
-            _exit(EXIT_FAILURE);
-        }
+        /* child_process will _exit if execve fails, so no return expected */
+        child_process(args, env);
+        /* If child_process returns, command was not found - exit cleanly */
+        _exit(127);  /* Standard "command not found" exit code */
     } 
     else // Parent process
     {
@@ -49,10 +48,20 @@ int executor(char** args, char** env)
         sigaction(SIGINT, &sa_old, NULL);
 
         if (WIFSIGNALED(status)) {
-            printf("Process terminated by signal: %d\n", WTERMSIG(status));
+            /* only print if it's not SIGINT (Ctrl+C) which is expected */
+            int sig = WTERMSIG(status);
+            if (sig != SIGINT) {
+                fprintf(stderr, "Process terminated by signal: %d\n", sig);
+            }
+        } else if (WIFEXITED(status)) {
+            int exit_code = WEXITSTATUS(status);
+            /* 127 means command not found - message already printed by child */
+            if (exit_code == 127) {
+                return 127;
+            }
         }
     }
-    return 1;
+    return 0;
 }
 
 // Attempts to execute the command by searching paths and the current directory
@@ -72,8 +81,10 @@ int child_process(char** args, char** env)
         }
     }
 
-    for (int i = 0; path_list[i]; i++)
+    // Free the allocated paths - use num_paths, not NULL check
+    for (int i = 0; i < num_paths; i++) {
         free(path_list[i]);
+    }
     free(path_string);
     free(path_list);
 
@@ -87,9 +98,25 @@ int child_process(char** args, char** env)
 
     char full_cwd_path[MAX_INPUT];
     snprintf(full_cwd_path, sizeof(full_cwd_path), "%s/%s", cwd, args[0]);
+    free(cwd);
     execve(full_cwd_path, args, env);
 
-    // perror("execve");
+    // If we reach here, command was not found anywhere
+    // Print a helpful error message with suggestions
+    fprintf(stderr, "edosh: command not found: %s\n", args[0]);
+    
+    // Provide suggestions for common typos
+    if (my_strcmp(args[0], "lol") == 0 || my_strcmp(args[0], "lmao") == 0) {
+        fprintf(stderr, "Did you mean: ls (list directory contents)?\n");
+    } else if (my_strcmp(args[0], "clera") == 0 || my_strcmp(args[0], "claer") == 0) {
+        fprintf(stderr, "Did you mean: clear?\n");
+    } else if (my_strcmp(args[0], "sl") == 0) {
+        fprintf(stderr, "Did you mean: ls?\n");
+    } else if (my_strcmp(args[0], "gti") == 0) {
+        fprintf(stderr, "Did you mean: git?\n");
+    } else {
+        fprintf(stderr, "Type 'help' for available commands.\n");
+    }
     
     return 1;
 }

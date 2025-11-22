@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <sys/wait.h>   // <--- added
+#include <sys/wait.h>
 
 // cd, cd [path], cd - (previous dir), cd ~ (home dir), cd .., handle non exsiting dirs, permission issues
 int command_cd(char** args, char* init_dir)
@@ -414,4 +414,17 @@ char** command_unsetenv(char** args, char** env){
     new_env[j] = NULL;
     // free(env);
     return new_env;
+}
+
+// ---------------------- history command ----------------------
+int command_history(char** history, int history_count)
+{
+    if (history_count == 0) {
+        printf("No history available.\n");
+        return 0;
+    }
+    for (int i = 0; i < history_count; ++i) {
+        printf("%4d  %s\n", i + 1, history[i]);
+    }
+    return 0;
 }

@@ -349,6 +349,8 @@ void shell_loop(char** env)
             env = command_setenv(args, env);
         } else if (my_strcmp(args[0], "unsetenv") == 0) {
             env = command_unsetenv(args, env);
+        } else if (my_strcmp(args[0], "history") == 0) {
+            command_history(history, history_count);
         } else {
             int sb = shell_builts(args, env, initial_directory);
             /* if shell_builts signalled exit (-1), clean up and break */

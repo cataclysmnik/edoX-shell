@@ -20,6 +20,7 @@ int command_env         (char** env);
 int command_which       (char** args, char** env);
 int command_help        (char** args, char** env);
 int command_run         (char** args, char** env);
+int command_history     (char** history, int history_count);  // <--- new prototype
 char** command_setenv   (char** args, char** env);
 char** command_unsetenv (char** args, char** env);
 
