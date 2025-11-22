@@ -257,8 +257,8 @@ static void print_prompt(void) {
     get_git_info(&git_status);
     
     if (cwd) {
-        /* Print cwd in bright yellow */
-        printf("\x1b[33;1m%s\x1b[0m", cwd);
+        /* Print cwd in red */
+        printf("\x1b[31;1m%s\x1b[0m", cwd);
         
         /* Print git info if in a git repo */
         if (git_status.is_git_repo && git_status.branch[0] != '\0') {
@@ -340,20 +340,6 @@ void shell_loop(char** env)
     printf("██        ██    ██  ██    ██       ▀██  ██    ██\n");
     printf("██▄▄▄▄▄▄  ██▄▄▄██    ██▄▄██   █▄▄▄▄▄█▀  ██    ██\n");
     printf("▀▀▀▀▀▀▀▀  ▀▀▀▀▀       ▀▀▀▀     ▀▀▀▀▀    ▀▀    ▀▀\n");
-    
-// ░▒▓████████▓▒░▒▓███████▓▒░ ░▒▓██████▓▒░ ░▒▓███████▓▒░▒▓█▓▒░░▒▓█▓▒░ 
-// ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░ 
-// ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░ 
-// ░▒▓██████▓▒░ ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░░▒▓████████▓▒░ 
-// ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░      ░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ 
-// ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░      ░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ 
-// ░▒▓████████▓▒░▒▓███████▓▒░ ░▒▓██████▓▒░░▒▓███████▓▒░░▒▓█▓▒░░▒▓█▓▒░ 
-                                                                   
-                                                                   
-
-
-
-
     printf("\nEnter 'help' for help.\n");
     printf("Tip: Type 'learning on' to enable educational tips and tutorials.\n\n");
 
