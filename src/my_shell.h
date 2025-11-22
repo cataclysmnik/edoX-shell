@@ -46,3 +46,8 @@ char* my_strncpy        (char* dest, const char* src, size_t n);
 /* SIGINT handler used by the shell to avoid exiting on Ctrl+C.
    Declared here so executor.c can restore the handler. */
 void sigint_handler(int signo);
+
+// Autocomplete functions
+char** find_command_matches(const char* prefix, char** env, int* out_count);
+char** find_file_matches(const char* prefix, int* out_count);
+void handle_tab_completion(char* input_buf, size_t* input_len, size_t* cursor, char** env);

@@ -260,6 +260,19 @@ int command_run(char** args, char** env)
     }
 }
 
+// Display command history
+int command_history(char** history, int history_count)
+{
+    if (history_count == 0) {
+        printf("No history available.\n");
+        return 0;
+    }
+    for (int i = 0; i < history_count; ++i) {
+        printf("%4d  %s\n", i + 1, history[i]);
+    }
+    return 0;
+}
+
 // Function to search for the command in PATH
 char* find_command_in_path(const char* command, char** env)
 {
@@ -414,17 +427,4 @@ char** command_unsetenv(char** args, char** env){
     new_env[j] = NULL;
     // free(env);
     return new_env;
-}
-
-// ---------------------- history command ----------------------
-int command_history(char** history, int history_count)
-{
-    if (history_count == 0) {
-        printf("No history available.\n");
-        return 0;
-    }
-    for (int i = 0; i < history_count; ++i) {
-        printf("%4d  %s\n", i + 1, history[i]);
-    }
-    return 0;
 }
