@@ -51,3 +51,12 @@ void sigint_handler(int signo);
 char** find_command_matches(const char* prefix, char** env, int* out_count);
 char** find_file_matches(const char* prefix, int* out_count);
 void handle_tab_completion(char* input_buf, size_t* input_len, size_t* cursor, char** env);
+
+// Educational features
+void show_command_tip(const char* command);
+void display_welcome_tutorial();
+int command_explain(char** args);
+int command_tutorial();
+
+// Global educational mode flag
+extern int educational_mode;

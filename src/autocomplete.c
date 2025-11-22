@@ -44,8 +44,8 @@ static char** find_string_matches(const char** list, const char* prefix, int* ou
 char** find_command_matches(const char* prefix, char** env, int* out_count) {
     static const char* builtins[] = {
         "cd", "pwd", "echo", "env", "setenv", "unsetenv", 
-        "which", "help", ".help", "run", "exit", "quit", 
-        "ls", "history", NULL
+        "which", "help", "run", "exit", "quit", 
+        "ls", "history", "explain", "tutorial", "learning", NULL
     };
     
     int builtin_count = 0;

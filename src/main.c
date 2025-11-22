@@ -27,7 +27,6 @@ void display_help() {
     printf("\tsetenv VAR=value    - Set an environment variable.\n");
     printf("\tunsetenv <variable> - Remove an environment variable.\n");
     printf("\twhich <command>     - Locate an executable in the system's PATH.\n");
-    printf("\t.help               - Display this help message.\n");
     printf("\thelp <command>      - Display help messages with examples for certain commands.\n");
     printf("\texit or quit        - Exit the shell.\n");
 }
@@ -48,13 +47,26 @@ int shell_builts(char** args, char** env, char* initial_directory)
         return command_env(env);
     } else if (my_strcmp(args[0], "which") == 0) {
         return command_which(args, env);
-    } else if (my_strcmp(args[0], ".help") == 0) {
-        display_help();
-        return 0;
     } else if (my_strcmp(args[0], "help") == 0) {
         return command_help(args, env);
     } else if (my_strcmp(args[0], "run") == 0) {
         return command_run(args, env);
+    } else if (my_strcmp(args[0], "explain") == 0) {
+        return command_explain(args);
+    } else if (my_strcmp(args[0], "tutorial") == 0) {
+        return command_tutorial();
+    } else if (my_strcmp(args[0], "learning") == 0) {
+        if (args[1] && my_strcmp(args[1], "off") == 0) {
+            educational_mode = 0;
+            printf("📚 Learning mode disabled. Type 'learning on' to enable.\n");
+        } else if (args[1] && my_strcmp(args[1], "on") == 0) {
+            educational_mode = 1;
+            printf("📚 Learning mode enabled! You'll see helpful tips.\n");
+        } else {
+            printf("Usage: learning [on|off]\n");
+            printf("Current status: %s\n", educational_mode ? "ON" : "OFF");
+        }
+        return 0;
     } else if (my_strcmp(args[0], "exit") == 0 || my_strcmp(args[0], "quit") == 0) {
         /* signal caller to exit cleanly */
         return -1;
@@ -321,14 +333,20 @@ void shell_loop(char** env)
     /* Clear the terminal and show a big "edoX" banner on startup */
     system("clear");
     printf("\n");
-    printf("  _____   ____     ____   __   __ \n");
-    printf(" |  ___| |  _ \\   / __ \\  \\ \\ / / \n");
-    printf(" | |__   | | | | | |  | |  \\ V /  \n");
-    printf(" |  __|  | | | | | |  | |   > <   \n");
-    printf(" | |___  | |_| | | |__| |  / . \\  \n");
-    printf(" |_____| |____/   \\____/  /_/ \\_\\ \n\n");
+    printf("  _____   ____     ___    ____   _   _ \n");
+    printf(" |  ___| |  _ \\   / _ \\  / ___| | | | |\n");
+    printf(" | |__   | | | | | | | | \\___ \\ | |_| |\n");
+    printf(" |  __|  | | | | | | | |  ___) ||  _  |\n");
+    printf(" | |___  | |_| | | |_| | |____/ | | | |\n");
+    printf(" |_____| |____/   \\___/  |____/ |_| |_|\n\n");
 
-    printf("\nEnter .help for help.\n\n");
+    printf("\nEnter 'help' for help.\n");
+    printf("Tip: Type 'learning on' to enable educational tips and tutorials.\n\n");
+
+    /* Show educational welcome tutorial if enabled */
+    if (educational_mode) {
+        display_welcome_tutorial();
+    }
 
     /* install our SIGINT handler for the interactive prompt */
     struct sigaction sa;
@@ -504,6 +522,10 @@ void shell_loop(char** env)
                 /* free history and other resources will be done after loop */
                 need_leading_newline = false;
                 break;
+            }
+            /* Show educational tip if enabled */
+            if (educational_mode) {
+                show_command_tip(args[0]);
             }
         }
         free_tokens(args);
