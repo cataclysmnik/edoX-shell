@@ -140,10 +140,86 @@ static int enable_raw_mode(void) {
 }
 
 /* print prompt (cwd) */
+/* Get git repository information */
+static void get_git_info(char* branch, size_t branch_size, int* has_changes) {
+    *has_changes = 0;
+    branch[0] = '\0';
+    
+    /* Check if we're in a git repository by looking for .git directory */
+    if (access(".git", F_OK) != 0) {
+        /* Try parent directories */
+        char* cwd = getcwd(NULL, 0);
+        if (!cwd) return;
+        
+        int found = 0;
+        char test_path[MAX_INPUT];
+        char* pos = cwd;
+        
+        while (*pos) {
+            snprintf(test_path, sizeof(test_path), "%s/.git", cwd);
+            if (access(test_path, F_OK) == 0) {
+                found = 1;
+                break;
+            }
+            
+            /* Go up one directory */
+            char* last_slash = strrchr(cwd, '/');
+            if (!last_slash || last_slash == cwd) break;
+            *last_slash = '\0';
+        }
+        
+        free(cwd);
+        if (!found) return;
+    }
+    
+    /* Get current branch name */
+    FILE* fp = popen("git symbolic-ref --short HEAD 2>/dev/null || git rev-parse --short HEAD 2>/dev/null", "r");
+    if (fp) {
+        if (fgets(branch, branch_size, fp)) {
+            /* Remove trailing newline */
+            size_t len = strlen(branch);
+            if (len > 0 && branch[len-1] == '\n') {
+                branch[len-1] = '\0';
+            }
+        }
+        pclose(fp);
+    }
+    
+    /* Check if there are uncommitted changes */
+    fp = popen("git status --porcelain 2>/dev/null", "r");
+    if (fp) {
+        char line[256];
+        if (fgets(line, sizeof(line), fp)) {
+            *has_changes = 1;
+        }
+        pclose(fp);
+    }
+}
+
 static void print_prompt(void) {
     char* cwd = getcwd(NULL, 0);
+    
+    /* Get git info */
+    char git_branch[128] = "";
+    int has_changes = 0;
+    get_git_info(git_branch, sizeof(git_branch), &has_changes);
+    
     if (cwd) {
-        printf("%s > ", cwd);
+        /* Print cwd in bright yellow */
+        printf("\x1b[33;1m%s\x1b[0m", cwd);
+        
+        /* Print git info if in a git repo */
+        if (git_branch[0] != '\0') {
+            if (has_changes) {
+                /* Red color for dirty repo */
+                printf(" \x1b[31;1m(%s *)\x1b[0m", git_branch);
+            } else {
+                /* Green color for clean repo */
+                printf(" \x1b[32;1m(%s)\x1b[0m", git_branch);
+            }
+        }
+        
+        printf(" > ");
         free(cwd);
     } else {
         printf("[unknown]> ");
