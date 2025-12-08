@@ -340,6 +340,7 @@ void shell_loop(char** env)
     printf("██        ██    ██  ██    ██       ▀██  ██    ██\n");
     printf("██▄▄▄▄▄▄  ██▄▄▄██    ██▄▄██   █▄▄▄▄▄█▀  ██    ██\n");
     printf("▀▀▀▀▀▀▀▀  ▀▀▀▀▀       ▀▀▀▀     ▀▀▀▀▀    ▀▀    ▀▀\n");
+    
     printf("\nEnter 'help' for help.\n");
     printf("Tip: Type 'learning on' to enable educational tips and tutorials.\n\n");
 
