@@ -17,32 +17,31 @@
 [![Language: C](https://img.shields.io/badge/Language-C-blue.svg)](https://en.wikipedia.org/wiki/C_(programming_language))
 [![Platform: Linux](https://img.shields.io/badge/Platform-Linux-green.svg)](https://www.linux.org/)
 
-[Features](#-features) • [Installation](#-installation) • [Usage](#-usage) • [Documentation](#-built-in-commands) • [Contributing](#-contributing)
+[Features](#features) • [Installation](#installation) • [Usage](#usage) • [Documentation](#built-in-commands)
 
 </div>
 
 ---
 
-## 📖 Table of Contents
+## Table of Contents
 
-- [Overview](#-overview)
-- [Features](#-features)
-- [Installation](#-installation)
-- [Quick Start](#-quick-start)
-- [Usage](#-usage)
-- [Built-in Commands](#-built-in-commands)
-- [Educational Features](#-educational-features)
-- [Git Integration](#-git-integration)
-- [Code Runner](#-code-runner)
-- [Project Structure](#-project-structure)
-- [Technical Details](#-technical-details)
-- [Troubleshooting](#-troubleshooting)
-- [Contributing](#-contributing)
-- [License](#-license)
+- [Overview](#overview)
+- [Features](#features)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Usage](#usage)
+- [Built-in Commands](#built-in-commands)
+- [Educational Features](#educational-features)
+- [Git Integration](#git-integration)
+- [Code Runner](#code-runner)
+- [Project Structure](#project-structure)
+- [Technical Details](#technical-details)
+- [Troubleshooting](#troubleshooting)
+- [Acknowledgments](#acknowledgments)
 
 ---
 
-## 🌟 Overview
+## Overview
 
 **EDOSH** (Educational Shell) is a custom Linux shell designed specifically for students and beginners learning command-line interfaces. Unlike traditional shells that assume prior knowledge, EDOSH provides contextual help, interactive tutorials, and smart suggestions to make learning Linux approachable and less intimidating.
 
@@ -58,18 +57,18 @@ Many students struggle with Linux because:
 ### Our Solution
 
 EDOSH bridges this gap by:
-- ✅ Providing contextual tips after command execution
-- ✅ Offering detailed explanations with real-world analogies
-- ✅ Suggesting corrections for common typos
-- ✅ Including interactive tutorials built into the shell
-- ✅ Displaying helpful git information for developers
-- ✅ Supporting code compilation and execution for multiple languages
+- Providing contextual tips after command execution
+- Offering detailed explanations with real-world analogies
+- Suggesting corrections for common typos
+- Including interactive tutorials built into the shell
+- Displaying helpful git information for developers
+- Supporting code compilation and execution for multiple languages
 
 ---
 
-## ✨ Features
+## Features
 
-### 🎓 Educational Features
+### Educational Features
 
 - **Learning Mode**: Toggle educational tips on/off with `learning on/off`
 - **Interactive Tutorials**: 4-lesson curriculum covering Linux fundamentals
@@ -77,7 +76,7 @@ EDOSH bridges this gap by:
 - **Contextual Tips**: Helpful suggestions appear after running commands
 - **Error Suggestions**: Smart typo detection (e.g., `gti` → `git`, `sl` → `ls`, `lol` → `ls`)
 
-### 💻 Developer Features
+### Developer Features
 
 - **Multi-Language Code Runner**: Compile and run C, C++, Python, and Java files directly
   ```bash
@@ -104,7 +103,7 @@ EDOSH bridges this gap by:
   - `history` command to view all past commands
   - Persistent session history (up to 100 commands)
 
-### 🛠️ Shell Features
+### Shell Features
 
 - **Raw Mode Input**: Full line editing with cursor positioning
 - **Signal Handling**: Proper Ctrl+C behavior (doesn't exit shell)
@@ -115,7 +114,7 @@ EDOSH bridges this gap by:
 
 ---
 
-## 🚀 Installation
+## Installation
 
 ### Prerequisites
 
@@ -181,7 +180,7 @@ make re
 
 ---
 
-## 🎯 Quick Start
+## Quick Start
 
 ### First Launch
 
@@ -244,7 +243,7 @@ lol                   # Suggests: Did you mean: ls?
 
 ---
 
-## 📚 Usage
+## Usage
 
 ### Basic Commands
 
@@ -293,7 +292,7 @@ learning              # Check current status
 
 ---
 
-## 🔧 Built-in Commands
+## Built-in Commands
 
 | Command | Description | Example |
 |---------|-------------|---------|
@@ -316,7 +315,7 @@ All other commands are executed as external programs (e.g., `ls`, `grep`, `git`)
 
 ---
 
-## 🎓 Educational Features
+## Educational Features
 
 ### Interactive Tutorial
 
@@ -413,7 +412,7 @@ lol
 
 ---
 
-## 🌿 Git Integration
+## Git Integration
 
 EDOSH displays rich git repository information directly in your prompt:
 
@@ -456,7 +455,7 @@ git status
 
 ---
 
-## 🏃 Code Runner
+## Code Runner
 
 The `run` command compiles and executes source files in multiple languages:
 
@@ -531,7 +530,7 @@ run Hello.java
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 edoX-shell/
@@ -572,7 +571,7 @@ edoX-shell/
 
 ---
 
-## 🔬 Technical Details
+## Technical Details
 
 ### Architecture
 
@@ -645,7 +644,7 @@ EDOSH follows a modular design with clear separation of concerns:
 
 ---
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 
@@ -727,92 +726,7 @@ gdb ./edosh
 
 ---
 
-## 🤝 Contributing
-
-We welcome contributions! Here's how you can help:
-
-### Ways to Contribute
-
-1. **Report Bugs**: Open an issue with details and reproduction steps
-2. **Suggest Features**: Propose new educational features or improvements
-3. **Improve Documentation**: Fix typos, add examples, clarify instructions
-4. **Submit Code**: Fix bugs or implement new features
-
-### Development Setup
-
-```bash
-# Fork the repository on GitHub
-git clone https://github.com/your-username/edoX-shell.git
-cd edoX-shell
-
-# Create a feature branch
-git checkout -b feature/your-feature-name
-
-# Make changes and test
-make clean && make
-./edosh
-
-# Commit with clear messages
-git commit -m "Add feature: description"
-
-# Push and create pull request
-git push origin feature/your-feature-name
-```
-
-### Code Style
-
-- Use 4-space indentation (or follow existing style)
-- Follow K&R C style for braces
-- Add comments for complex logic
-- Keep functions under 50 lines when possible
-- Use descriptive variable names
-
-### Testing Checklist
-
-Before submitting a PR:
-
-- [ ] Code compiles without warnings (`make`)
-- [ ] All built-in commands work correctly
-- [ ] Tab completion functions properly
-- [ ] Git status displays correctly (if in repo)
-- [ ] `run` command works for all supported languages
-- [ ] No memory leaks (test with valgrind if possible)
-- [ ] Learning mode tips display correctly
-- [ ] Documentation updated (if adding features)
-
----
-
-## 📄 License
-
-This project is licensed under the **MIT License**.
-
-```
-MIT License
-
-Copyright (c) 2024 EDOSH Contributors
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-```
-
----
-
-## 🙏 Acknowledgments
+## Acknowledgments
 
 ### Inspiration
 
@@ -829,7 +743,7 @@ SOFTWARE.
 
 ---
 
-## 📊 Project Statistics
+## Project Statistics
 
 - **Language**: C (C99)
 - **Lines of Code**: ~2000+
@@ -842,28 +756,11 @@ SOFTWARE.
 
 ---
 
-## 🔮 Future Roadmap
-
-### Planned Features
-
-- [ ] **Command aliases**: Custom shortcuts (e.g., `alias ll='ls -la'`)
-- [ ] **Configuration file**: `~/.edoshrc` for persistent settings
-- [ ] **Syntax highlighting**: Color-code commands as you type
-- [ ] **Smart suggestions**: Suggest commands based on context
-- [ ] **Plugin system**: Extensible architecture for custom features
-- [ ] **Persistent history**: Save history across sessions to file
-- [ ] **Job control**: Background processes (`&`, `fg`, `bg`, `jobs`)
-- [ ] **Pipes and redirection**: Full support for `|`, `>`, `<`, `>>`
-- [ ] **More language support**: Rust, Go, JavaScript for `run` command
-- [ ] **Localization**: Multi-language support for tutorials
-
----
-
 <div align="center">
 
-**Made with ❤️ for students learning Linux**
+**Made with care for students learning Linux**
 
-⭐ Star us on GitHub if EDOSH helped you learn!
+Star us on GitHub if EDOSH helped you learn!
 
 [Report Bug](https://github.com/cataclysmnik/edoX-shell/issues) • [Request Feature](https://github.com/cataclysmnik/edoX-shell/issues) • [Documentation](https://github.com/cataclysmnik/edoX-shell/wiki)
 
